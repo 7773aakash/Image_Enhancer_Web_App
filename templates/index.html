@@ -1,0 +1,220 @@
+ <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Image Enhancement</title>
+     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+     <style>
+         .grayscale {
+             filter: grayscale(100%);
+         }
+         .added-text {
+             position: absolute;
+             font-size: 16px;
+             color: white;
+             background-color: rgba(0, 0, 0, 0.5);
+             padding: 5px;
+             border-radius: 5px;
+             cursor: pointer; /* Add cursor pointer */
+         }
+     </style>
+ </head>
+ <body>
+     <div class="container mt-5">
+         <h2 class="mb-4"> Image Enhancer</h2>
+         <div class="row">
+             <div class="col-md-6">
+                 <div class="card">
+                     <div class="card-header">
+                         <h3 class="text-center">Upload Image</h3>
+                     </div>
+                     <div class="card-body">
+                         <form action="/" method="post" enctype="multipart/form-data">
+                             <div class="form-group">
+                                 <div class="custom-file">
+                                     <input type="file" class="custom-file-input" id="customFile" name="file" requiredaria-label="File" style="display: none;">
+                                     <label class="custom-file-label" for="customFile">Choose file</label>
+                                 </div>
+                             </div>
+                             <div class="text-center">
+                                 <button type="submit" class="btn btn-primary" id="uploadButton">Upload Image</button>
+                             </div>
+                         </form>
+                     </div>
+                 </div>
+             </div>
+             <div class="col-md-6">
+                 <div class="card" id="uploadedImageCard" style="display: none;">
+                     <div class="card-header">
+                         <h3 class="text-center">Uploaded Image</h3>
+                     </div>
+                     <div class="card-body position-relative">
+                         <img id="uploadedImage" class="img-fluid" alt="Uploaded Image">
+                         <div id="textContainer"></div>
+                     </div>
+                 </div>
+                 <div class="text-center mt-3">
+                     <button type="button" class="btn btn-primary mr-2" id="downloadButton">Download Image</button>
+                 </div>
+                 <div class="mt-3">
+                     <button type="button" class="btn btn-success mr-2" id="rotateButton">Rotate</button>
+                     <button type="button" class="btn btn-info mr-2" id="grayscaleButton">Grayscale</button>
+                     <button type="button" class="btn btn-warning mr-2" id="blurButton">Blur</button>
+                     <button type="button" class="btn btn-secondary mr-2" id="textButton">Add Text</button>
+                     <button type="button" class="btn btn-danger mr-2" id="cropButton">Crop</button>
+                     <button type="button" class="btn btn-dark" id="contrastButton">Contrast</button>
+                     <input type="range" class="custom-range" id="blurSlider" min="1" max="20" value="5" style="display: none;">
+                     <input type="range" class="custom-range" id="cropSlider" min="0" max="100" value="0" style="display: none;">
+                     <input type="range" class="custom-range" id="contrastSlider" min="0" max="200" value="100" style="display: none;">
+                 </div>
+             </div>
+         </div>
+     </div>
+ 
+     <script>
+     document.getElementById('uploadButton').addEventListener('click', function() {
+         document.getElementById('customFile').click();
+     });
+ 
+     document.getElementById('customFile').addEventListener('change', function() {
+         var file = this.files[0];
+         if (file) {
+             var reader = new FileReader();
+             reader.onload = function(e) {
+                 document.getElementById('uploadedImage').src = e.target.result;
+                 document.getElementById('uploadedImageCard').style.display = 'block';
+             };
+             reader.readAsDataURL(file);
+         }
+     });
+ 
+     var rotationAngle = 0; // Initialize rotation angle
+     var grayscale = false; // Initialize grayscale state
+     var textCounter = 0; // Counter for text elements
+ 
+     document.getElementById('rotateButton').addEventListener('click', function() {
+         console.log('Rotating image by 90 degrees...');
+         rotationAngle += 90; // Increment rotation angle by 90 degrees
+         document.getElementById('uploadedImage').style.transform = `rotate(${rotationAngle}deg)`; // Apply rotation
+     });
+ 
+     document.getElementById('grayscaleButton').addEventListener('click', function() {
+         console.log('Toggling grayscale...');
+         grayscale = !grayscale; // Toggle grayscale state
+         if (grayscale) {
+             document.getElementById('uploadedImage').parentNode.classList.add('grayscale'); // Apply grayscale class
+         } else {
+             document.getElementById('uploadedImage').parentNode.classList.remove('grayscale'); // Remove grayscale class
+         }
+     });
+ 
+     document.getElementById('blurButton').addEventListener('click', function() {
+         console.log('Adjusting blur intensity...');
+         document.getElementById('blurSlider').style.display = 'block'; //Show the blur slider
+    });
+
+    document.getElementById('blurSlider').addEventListener('input', function() {
+        var blurAmount = this.value; // Get the current value of the blur slider
+        console.log('Blur intensity:', blurAmount);
+        // Apply blur effect to the uploaded image
+        document.getElementById('uploadedImage').style.filter = `blur(${blurAmount}px)`;
+    });
+
+    document.getElementById('textButton').addEventListener('click', function() {
+        console.log('Adding text...');
+        var text = prompt('Enter text:');
+        if (text) {
+            addTextToImage(text);
+        }
+    });
+
+    function addTextToImage(text) {
+        var textElement = document.createElement('div');
+        textElement.textContent = text;
+        textElement.className = 'added-text';
+        textElement.style.top = '50%';
+        textElement.style.left = '50%';
+        textElement.style.transform = 'translate(-50%, -50%)';
+        textElement.style.position = 'absolute';
+        textElement.id = 'text_' + textCounter;
+        textCounter++;
+        document.getElementById('textContainer').appendChild(textElement);
+        enableDragging(textElement);
+        textElement.addEventListener('click', function() {
+            this.remove();
+        });
+    }
+
+    function enableDragging(element) {
+        var offsetX, offsetY, isDown = false;
+
+        element.addEventListener('mousedown', function(e) {
+            isDown = true;
+            offsetX = e.clientX - element.getBoundingClientRect().left;
+            offsetY = e.clientY - element.getBoundingClientRect().top;
+        });
+
+        element.addEventListener('mouseup', function() {
+            isDown = false;
+        });
+
+        element.addEventListener('mousemove', function(e) {
+            e.preventDefault();
+            if (isDown) {
+                var x = e.clientX - offsetX;
+                var y = e.clientY - offsetY;
+                element.style.left = x + 'px';
+                element.style.top = y + 'px';
+            }
+        });
+    }
+
+    document.getElementById('cropButton').addEventListener('click', function() {
+        console.log('Adjusting crop area...');
+        document.getElementById('cropSlider').style.display = 'block'; // Show the crop slider
+    });
+
+    document.getElementById('cropSlider').addEventListener('input', function() {
+        var cropPercentage = this.value; // Get the current value of the crop slider
+        // Calculate the crop dimensions based on the percentage
+        var imageWidth = document.getElementById('uploadedImage').naturalWidth;
+        var imageHeight = document.getElementById('uploadedImage').naturalHeight;
+        var cropWidth = (cropPercentage / 100) * imageWidth;
+        var cropHeight = (cropPercentage / 100) * imageHeight;
+        var cropX = (imageWidth - cropWidth) / 2;
+        var cropY = (imageHeight - cropHeight) / 2;
+        // Set the clip path style to crop the image
+        var cropStyle = `inset(${cropY}px ${cropX}px ${cropY}px ${cropX}px)`;
+        document.getElementById('uploadedImage').style.clipPath = cropStyle;
+    });
+
+    document.getElementById('contrastButton').addEventListener('click', function() {
+        console.log('Adjusting contrast...');
+        document.getElementById('contrastSlider').style.display = 'block'; // Show the contrast slider
+    });
+
+    document.getElementById('contrastSlider').addEventListener('input', function() {
+        var contrastValue = this.value; // Get the current value of the contrast slider
+        console.log('Contrast value:', contrastValue);
+        // Apply contrast effect to the uploaded image
+        document.getElementById('uploadedImage').style.filter = `contrast(${contrastValue}%)`;
+    });
+
+    document.getElementById('downloadButton').addEventListener('click', function() {
+        var imageUrl = document.getElementById('uploadedImage').src;
+        var fileName = 'edited_image.png'; // You can change the filename as needed
+        var link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+    </script>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>
