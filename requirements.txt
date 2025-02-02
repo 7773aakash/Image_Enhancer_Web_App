@@ -1,0 +1,6 @@
+gunicorn
+werkzeug
+Flask
+Pillow
+opencv-python
+
